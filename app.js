@@ -15,7 +15,7 @@ serverMiddleware(app);
 socket_io(server);
 connectToDb();
 app.use((req, res) => {
-  res.send("Api is working Congratulations!!!");
+  res.status(200).json({ msg: "Hello" });
 });
 
 const PORT = process.env.PORT || 5000;

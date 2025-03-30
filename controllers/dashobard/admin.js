@@ -77,6 +77,7 @@ const adminController = {
       if (!admin) {
         return res.status(404).json(response(null, 0, "Admin not found or account is inactive"));
       }
+
       const company = await Company.findOne({
         _id: admin.company_id,
         is_deleted: false,
@@ -86,10 +87,12 @@ const adminController = {
       if (!company) {
         return res.status(403).json(response(null, 0, "Company account is inactive or deleted"));
       }
+
       const isPasswordValid = await comparePassword(admin.password, password);
       if (!isPasswordValid) {
         return res.status(401).json(response(null, 0, "Invalid password"));
       }
+
       const token = genJsonWebToken({ _id: admin._id });
 
       return res.status(200).json(
@@ -99,11 +102,13 @@ const adminController = {
               _id: admin._id,
               name: admin.name,
               email: admin.email,
+              is_active: admin.is_active
             },
             company: {
               _id: company._id,
               name: company.name,
               email: company.email,
+              is_active: company.is_active
             },
             token,
             expiresIn: '24h'
@@ -136,8 +141,9 @@ const adminController = {
       });
 
       if (!admin) {
-        return res.status(401).json(response({ isValid: false }, 0, "Invalid token"));
+        return res.status(401).json(response({ isValid: false, isActive: false }, 0, "Admin account is inactive or deleted"));
       }
+
       const company = await Company.findOne({
         _id: admin.company_id,
         is_deleted: false,
@@ -145,11 +151,12 @@ const adminController = {
       });
 
       if (!company) {
-        return res.status(401).json(response({ isValid: false }, 0, "Company account is inactive or deleted"));
+        return res.status(401).json(response({ isValid: false, isActive: false }, 0, "Company account is inactive or deleted"));
       }
 
       return res.status(200).json(response({ 
         isValid: true,
+        isActive: true,
         expiresIn: new Date(decoded.exp * 1000).toISOString()
       }, 1, "Token is valid"));
     } catch (error) {

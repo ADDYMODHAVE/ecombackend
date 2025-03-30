@@ -3,21 +3,15 @@ const mongoose = require('mongoose');
 const adminSchema = new mongoose.Schema({
     email: {
         type: String,
-        required: true,
-        unique: true
+        trim: true,
+        lowercase: true
     },
     password: {
-        type: String,
-        required: true
-    },
-    company_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Company',
-        required: true
+        type: String
     },
     name: {
         type: String,
-        required: true
+        trim: true
     },
     is_active: {
         type: Boolean,

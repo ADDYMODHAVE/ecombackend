@@ -4,7 +4,7 @@ const bcryptJS = require("bcryptjs");
 
 module.exports = {
   genJsonWebToken: (jsondata) => {
-    const jsonToken = jwt.sign(jsondata, process.env.JWT_SECRET_KEY, { expiresIn: '24h' });
+    const jsonToken = jwt.sign(jsondata, process.env.JWT_SECRET_KEY, { expiresIn: "24h" });
     const encryptToken = cryptoJS.AES.encrypt(jsonToken, process.env.CRYPTO_SECRET_KEY).toString();
     const actualToken = encryptToken.replace(/\//g, "-");
     return actualToken;

@@ -5,6 +5,7 @@ const http = require("http");
 const socket_io = require("./realtime/socket");
 const connectToDb = require("./database/db");
 const serverMiddleware = require("./server-middleware");
+const routes = require("./routes");
 
 dotenv.config();
 
@@ -14,8 +15,13 @@ const server = http.createServer(app);
 serverMiddleware(app);
 socket_io(server);
 connectToDb();
+
+// Routes
+app.use("/api", routes);
+
+// Default route
 app.use((req, res) => {
-  res.status(200).json({ msg: "Hello" });
+  res.status(200).send("Welcome to the API");
 });
 
 const PORT = process.env.PORT || 5000;

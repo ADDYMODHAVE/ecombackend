@@ -9,6 +9,11 @@ const adminSchema = new mongoose.Schema({
     password: {
         type: String
     },
+    company_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
+        required: true
+    },
     name: {
         type: String,
         trim: true

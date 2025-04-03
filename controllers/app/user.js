@@ -70,11 +70,13 @@ const userController = {
   // Verify OTP
   verifyOTP: async (req, res) => {
     try {
-      const { user_id, otp } = req.body;
+      const { user_id, otp, company_id } = req.body;
 
       const user = await User.findOne({
         _id: user_id,
         is_deleted: false,
+        is_active: true,
+        company_id
       });
 
       if (!user) {
@@ -103,10 +105,15 @@ const userController = {
   // Login
   login: async (req, res) => {
     try {
-      const { phone, password } = req.body;
+      const { phone, password, company_id } = req.body;
+
+      if (!company_id) {
+        return res.status(400).json(response(null, 0, "Company ID is required"));
+      }
 
       const user = await User.findOne({
         phone,
+        company_id,
         is_deleted: false,
         is_active: true,
       });
@@ -115,8 +122,29 @@ const userController = {
         return res.status(404).json(response(null, 0, "User not found"));
       }
 
+      const isPasswordValid = await comparePassword(user.password, password);
+      if (!isPasswordValid) {
+        return res.status(401).json(response(null, 0, "Invalid password"));
+      }
+
+      // If user is not verified, allow verification with static OTP
       if (!user.is_verified) {
-        return res.status(403).json(response(null, 0, "Please verify your account first"));
+        // Set verification OTP
+        user.verification_otp = "123456";
+        user.verification_otp_expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        await user.save();
+
+        return res.status(200).json(
+          response(
+            {
+              user_id: user._id,
+              company_id: user.company_id,
+              is_verified: false
+            },
+            0,
+            "Account not verified"
+          )
+        );
       }
 
       // Check if company is active
@@ -128,11 +156,6 @@ const userController = {
 
       if (!company) {
         return res.status(403).json(response(null, 0, "Company account is inactive or deleted"));
-      }
-
-      const isPasswordValid = await comparePassword(user.password, password);
-      if (!isPasswordValid) {
-        return res.status(401).json(response(null, 0, "Invalid password"));
       }
 
       const token = genJsonWebToken({

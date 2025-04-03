@@ -59,7 +59,7 @@ const adminController = {
 
   login: async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, company_id } = req.body;
       if (!email || !password) {
         return res.status(400).json(response(null, 0, "Email and password are required"));
       }
@@ -71,7 +71,8 @@ const adminController = {
       const admin = await Admin.findOne({
         email,
         is_deleted: false,
-        is_active: true
+        is_active: true,
+        company_id
       });
 
       if (!admin) {
@@ -154,7 +155,7 @@ const adminController = {
         return res.status(401).json(response({ isValid: false, isActive: false }, 0, "Company account is inactive or deleted"));
       }
 
-      return res.status(200).json(response({ 
+      return res.status(200).json(response({
         isValid: true,
         isActive: true,
         expiresIn: new Date(decoded.exp * 1000).toISOString()

@@ -1,31 +1,31 @@
-const { decodeJsonWebToken } = require('../helper/secure');
-const Admin = require('../models/admin');
-const Company = require('../models/company');
+const { decodeJsonWebToken } = require("../helper/secure");
+const Admin = require("../models/admin");
+const Company = require("../models/company");
 
 const verifyToken = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
+    const token = req.headers.authorization;
+
     if (!token) {
       return res.status(401).json({
         responseMessage: "No token provided",
         responseCode: 0,
         responseStatus: "Error",
         showMessage: true,
-        response: null
+        response: null,
       });
     }
 
     const decoded = decodeJsonWebToken(token);
 
     // Check if token is expired
-    if (decoded.exp * 1000 < Date.now()) {
+    if (decoded.expired) {
       return res.status(401).json({
         responseMessage: "Token has expired",
         responseCode: 0,
         responseStatus: "Error",
         showMessage: true,
-        response: { isValid: false, isExpired: true }
+        response: { isValid: false, isExpired: true },
       });
     }
 
@@ -33,7 +33,7 @@ const verifyToken = async (req, res, next) => {
     const admin = await Admin.findOne({
       _id: decoded._id,
       is_deleted: false,
-      is_active: true
+      is_active: true,
     });
 
     if (!admin) {
@@ -42,7 +42,7 @@ const verifyToken = async (req, res, next) => {
         responseCode: 0,
         responseStatus: "Error",
         showMessage: true,
-        response: { isValid: false, isActive: false }
+        response: { isValid: false, isActive: false },
       });
     }
 
@@ -50,7 +50,7 @@ const verifyToken = async (req, res, next) => {
     const company = await Company.findOne({
       _id: admin.company_id,
       is_deleted: false,
-      is_active: true
+      is_active: true,
     });
 
     if (!company) {
@@ -59,7 +59,7 @@ const verifyToken = async (req, res, next) => {
         responseCode: 0,
         responseStatus: "Error",
         showMessage: true,
-        response: { isValid: false, isActive: false }
+        response: { isValid: false, isActive: false },
       });
     }
 
@@ -73,9 +73,9 @@ const verifyToken = async (req, res, next) => {
       responseCode: 0,
       responseStatus: "Error",
       showMessage: true,
-      response: { isValid: false }
+      response: { isValid: false },
     });
   }
 };
 
-module.exports = verifyToken; 
+module.exports = verifyToken;

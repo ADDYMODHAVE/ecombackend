@@ -9,28 +9,28 @@ const adminController = {
       const { company_name, company_email, company_phone, company_address, admin_name, admin_email, admin_password } = req.body;
 
       if (!company_name || !company_email || !admin_name || !admin_email || !admin_password) {
-        return res.status(400).json(response(null, 0, "All fields are required"));
+        return res.status(200).json(response(null, 0, "All fields are required"));
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(company_email) || !emailRegex.test(admin_email)) {
-        return res.status(400).json(response(null, 0, "Invalid email format"));
+        return res.status(200).json(response(null, 0, "Invalid email format"));
       }
       const existingCompany = await Company.findOne({
         email: company_email,
-        is_deleted: false
+        is_deleted: false,
       });
       if (existingCompany) {
-        return res.status(400).json(response(null, 0, "Company email already exists"));
+        return res.status(200).json(response(null, 0, "Company email already exists"));
       }
       const existingAdmin = await Admin.findOne({
         email: admin_email,
-        is_deleted: false
+        is_deleted: false,
       });
       if (existingAdmin) {
-        return res.status(400).json(response(null, 0, "Admin email already exists"));
+        return res.status(200).json(response(null, 0, "Admin email already exists"));
       }
       if (admin_password.length < 8) {
-        return res.status(400).json(response(null, 0, "Password must be at least 8 characters long"));
+        return res.status(200).json(response(null, 0, "Password must be at least 8 characters long"));
       }
       const company = await Company.create({
         name: company_name,
@@ -38,7 +38,7 @@ const adminController = {
         phone: company_phone,
         address: company_address,
         is_active: true,
-        is_deleted: false
+        is_deleted: false,
       });
       const hashedPassword = await hashPassword(admin_password);
 
@@ -48,7 +48,7 @@ const adminController = {
         password: hashedPassword,
         company_id: company._id,
         is_active: true,
-        is_deleted: false
+        is_deleted: false,
       });
 
       return res.status(201).json(response(admin, 1, "Admin registered successfully"));
@@ -61,18 +61,18 @@ const adminController = {
     try {
       const { email, password, company_id } = req.body;
       if (!email || !password) {
-        return res.status(400).json(response(null, 0, "Email and password are required"));
+        return res.status(200).json(response(null, 0, "Email and password are required"));
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        return res.status(400).json(response(null, 0, "Invalid email format"));
+        return res.status(200).json(response(null, 0, "Invalid email format"));
       }
 
       const admin = await Admin.findOne({
         email,
         is_deleted: false,
         is_active: true,
-        company_id
+        company_id,
       });
 
       if (!admin) {
@@ -82,7 +82,7 @@ const adminController = {
       const company = await Company.findOne({
         _id: admin.company_id,
         is_deleted: false,
-        is_active: true
+        is_active: true,
       });
 
       if (!company) {
@@ -91,7 +91,7 @@ const adminController = {
 
       const isPasswordValid = await comparePassword(admin.password, password);
       if (!isPasswordValid) {
-        return res.status(401).json(response(null, 0, "Invalid password"));
+        return res.status(200).json(response(null, 0, "Invalid password"));
       }
 
       const token = genJsonWebToken({ _id: admin._id });
@@ -103,16 +103,16 @@ const adminController = {
               _id: admin._id,
               name: admin.name,
               email: admin.email,
-              is_active: admin.is_active
+              is_active: admin.is_active,
             },
             company: {
               _id: company._id,
               name: company.name,
               email: company.email,
-              is_active: company.is_active
+              is_active: company.is_active,
             },
             token,
-            expiresIn: '24h'
+            expiresIn: "24h",
           },
           1,
           "Login successful"
@@ -127,41 +127,48 @@ const adminController = {
     try {
       const { token } = req.body;
       if (!token) {
-        return res.status(400).json(response(null, 0, "Token is required"));
+        return res.status(200).json(response(null, 0, "Token is required"));
       }
       const decoded = decodeJsonWebToken(token);
 
-      if (decoded.exp * 1000 < Date.now()) {
-        return res.status(401).json(response({ isValid: false, isExpired: true }, 0, "Token has expired"));
+      // Check if token is expired
+      if (decoded.expired) {
+        return res.status(200).json(response({ isValid: false, isExpired: true }, 0, "Token has expired"));
       }
 
       const admin = await Admin.findOne({
         _id: decoded._id,
         is_deleted: false,
-        is_active: true
+        is_active: true,
       });
 
       if (!admin) {
-        return res.status(401).json(response({ isValid: false, isActive: false }, 0, "Admin account is inactive or deleted"));
+        return res.status(200).json(response({ isValid: false, isActive: false }, 0, "Admin account is inactive or deleted"));
       }
 
       const company = await Company.findOne({
         _id: admin.company_id,
         is_deleted: false,
-        is_active: true
+        is_active: true,
       });
 
       if (!company) {
-        return res.status(401).json(response({ isValid: false, isActive: false }, 0, "Company account is inactive or deleted"));
+        return res.status(200).json(response({ isValid: false, isActive: false }, 0, "Company account is inactive or deleted"));
       }
 
-      return res.status(200).json(response({
-        isValid: true,
-        isActive: true,
-        expiresIn: new Date(decoded.exp * 1000).toISOString()
-      }, 1, "Token is valid"));
+      return res.status(200).json(
+        response(
+          {
+            isValid: true,
+            isActive: true,
+            expiresIn: new Date(decoded.exp * 1000).toISOString(),
+          },
+          1,
+          "Token is valid"
+        )
+      );
     } catch (error) {
-      return res.status(401).json(response({ isValid: false }, 0, "Invalid token"));
+      return res.status(200).json(response({ isValid: false }, 0, "Invalid token"));
     }
   },
 };

@@ -10,11 +10,20 @@ module.exports = {
     return actualToken;
   },
   decodeJsonWebToken: (token) => {
-    const actualToken = token.replace(/-/g, "/");
-    const bytes = cryptoJS.AES.decrypt(actualToken, process.env.CRYPTO_SECRET_KEY);
-    const decryptToken = bytes.toString(cryptoJS.enc.Utf8);
-    const data = jwt.verify(decryptToken, process.env.JWT_SECRET_KEY);
-    return { _id: data._id, exp: data.exp };
+    try {
+      const actualToken = token.replace(/-/g, "/");
+      const bytes = cryptoJS.AES.decrypt(actualToken, process.env.CRYPTO_SECRET_KEY);
+      const decryptToken = bytes.toString(cryptoJS.enc.Utf8);
+      const data = jwt.verify(decryptToken, process.env.JWT_SECRET_KEY);
+      return { _id: data._id, exp: data.exp };
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        // Return a special object for expired tokens
+        return { expired: true, exp: error.expiredAt };
+      }
+      // Re-throw other errors
+      throw error;
+    }
   },
   hashPassword: async (password) => {
     const hashPass = await bcryptJS.hash(password, Number(process.env.BCRYPT_SALT_ROUND));

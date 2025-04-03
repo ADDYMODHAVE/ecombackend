@@ -11,7 +11,7 @@ const userController = {
 
       // Validate company_id
       if (!company_id) {
-        return res.status(400).json(response(null, 0, "Company ID is required"));
+        return res.status(200).json(response(null, 0, "Company ID is required"));
       }
 
       // Check if company exists and is active
@@ -22,7 +22,7 @@ const userController = {
       });
 
       if (!company) {
-        return res.status(404).json(response(null, 0, "Company not found or inactive"));
+        return res.status(200).json(response(null, 0, "Company not found or inactive"));
       }
 
       // Check if user already exists
@@ -32,7 +32,7 @@ const userController = {
       });
 
       if (existingUser) {
-        return res.status(400).json(response(null, 0, "User already exists"));
+        return res.status(200).json(response(null, 0, "User already exists"));
       }
 
       // Hash password
@@ -76,19 +76,19 @@ const userController = {
         _id: user_id,
         is_deleted: false,
         is_active: true,
-        company_id
+        company_id,
       });
 
       if (!user) {
-        return res.status(404).json(response(null, 0, "User not found"));
+        return res.status(200).json(response(null, 0, "User not found"));
       }
 
       if (user.verification_otp !== otp) {
-        return res.status(400).json(response(null, 0, "Invalid OTP"));
+        return res.status(200).json(response(null, 0, "Invalid OTP"));
       }
 
       if (new Date() > user.verification_otp_expiry) {
-        return res.status(400).json(response(null, 0, "OTP has expired"));
+        return res.status(200).json(response(null, 0, "OTP has expired"));
       }
 
       user.is_verified = true;
@@ -108,7 +108,7 @@ const userController = {
       const { phone, password, company_id } = req.body;
 
       if (!company_id) {
-        return res.status(400).json(response(null, 0, "Company ID is required"));
+        return res.status(200).json(response(null, 0, "Company ID is required"));
       }
 
       const user = await User.findOne({
@@ -119,12 +119,12 @@ const userController = {
       });
 
       if (!user) {
-        return res.status(404).json(response(null, 0, "User not found"));
+        return res.status(200).json(response(null, 0, "User not found"));
       }
 
       const isPasswordValid = await comparePassword(user.password, password);
       if (!isPasswordValid) {
-        return res.status(401).json(response(null, 0, "Invalid password"));
+        return res.status(200).json(response(null, 0, "Invalid password"));
       }
 
       // If user is not verified, allow verification with static OTP
@@ -139,7 +139,7 @@ const userController = {
             {
               user_id: user._id,
               company_id: user.company_id,
-              is_verified: false
+              is_verified: false,
             },
             0,
             "Account not verified"
@@ -155,7 +155,7 @@ const userController = {
       });
 
       if (!company) {
-        return res.status(403).json(response(null, 0, "Company account is inactive or deleted"));
+        return res.status(200).json(response(null, 0, "Company account is inactive or deleted"));
       }
 
       const token = genJsonWebToken({
@@ -175,6 +175,7 @@ const userController = {
               company_name: company.name,
             },
             token,
+            expiresIn: "24h",
           },
           1,
           "Login successful"
@@ -191,7 +192,7 @@ const userController = {
       const { contactType, contact, company_id } = req.body;
 
       if (!contactType || !contact || !company_id) {
-        return res.status(400).json(response(null, 0, "Contact type, value, and company ID are required"));
+        return res.status(200).json(response(null, 0, "Contact type, value, and company ID are required"));
       }
 
       // Validate company exists and is active
@@ -202,19 +203,19 @@ const userController = {
       });
 
       if (!company) {
-        return res.status(404).json(response(null, 0, "Company not found or inactive"));
+        return res.status(200).json(response(null, 0, "Company not found or inactive"));
       }
 
       // Validate contact type
       if (!["email", "phone"].includes(contactType)) {
-        return res.status(400).json(response(null, 0, "Invalid contact type"));
+        return res.status(200).json(response(null, 0, "Invalid contact type"));
       }
 
       // Validate email format if contact type is email
       if (contactType === "email") {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(contact)) {
-          return res.status(400).json(response(null, 0, "Invalid email format"));
+          return res.status(200).json(response(null, 0, "Invalid email format"));
         }
       }
 
@@ -222,7 +223,7 @@ const userController = {
       if (contactType === "phone") {
         const phoneRegex = /^\d{10}$/;
         if (!phoneRegex.test(contact)) {
-          return res.status(400).json(response(null, 0, "Invalid phone number format"));
+          return res.status(200).json(response(null, 0, "Invalid phone number format"));
         }
       }
 
@@ -235,7 +236,7 @@ const userController = {
       });
 
       if (!user) {
-        return res.status(404).json(response(null, 0, "User not found"));
+        return res.status(200).json(response(null, 0, "User not found"));
       }
 
       // Generate and save OTP
@@ -266,7 +267,7 @@ const userController = {
       const { user_id, otp, new_password, company_id } = req.body;
 
       if (!user_id || !otp || !new_password) {
-        return res.status(400).json(response(null, 0, "All fields are required"));
+        return res.status(200).json(response(null, 0, "All fields are required"));
       }
 
       // Find user
@@ -278,17 +279,17 @@ const userController = {
       });
 
       if (!user) {
-        return res.status(404).json(response(null, 0, "User not found"));
+        return res.status(200).json(response(null, 0, "User not found"));
       }
 
       // Verify OTP
       if (user.reset_password_otp !== otp) {
-        return res.status(400).json(response(null, 0, "Invalid OTP"));
+        return res.status(200).json(response(null, 0, "Invalid OTP"));
       }
 
       // Check OTP expiry
       if (user.reset_password_otp_expiry < Date.now()) {
-        return res.status(400).json(response(null, 0, "OTP has expired"));
+        return res.status(200).json(response(null, 0, "OTP has expired"));
       }
 
       // Hash new password
@@ -309,18 +310,17 @@ const userController = {
   // Check Token
   checkToken: async (req, res) => {
     try {
-
       const token = req.headers.authorization;
 
-
       if (!token) {
-        return res.status(401).json(response(null, 0, "No token provided"));
+        return res.status(200).json(response(null, 0, "No token provided"));
       }
 
       const decoded = decodeJsonWebToken(token);
 
-      if (decoded.exp * 1000 < Date.now()) {
-        return res.status(401).json(response(null, 0, "Token has expired"));
+      // Check if token is expired
+      if (decoded.expired) {
+        return res.status(200).json(response({ isValid: false, isExpired: true }, 0, "Token has expired"));
       }
 
       // Find user with company information
@@ -331,7 +331,7 @@ const userController = {
       });
 
       if (!user) {
-        return res.status(401).json(response(null, 0, "User account is inactive or deleted"));
+        return res.status(200).json(response({ isValid: false, isActive: false }, 0, "User account is inactive or deleted"));
       }
 
       // Check if company is active
@@ -342,13 +342,14 @@ const userController = {
       });
 
       if (!company) {
-        return res.status(403).json(response(null, 0, "Company account is inactive or deleted"));
+        return res.status(200).json(response({ isValid: false, isActive: false }, 0, "Company account is inactive or deleted"));
       }
 
       return res.status(200).json(
         response(
           {
             isValid: true,
+            isActive: true,
             user: {
               _id: user._id,
               name: user.name,
@@ -357,13 +358,14 @@ const userController = {
               company_id: user.company_id,
               company_name: company.name,
             },
+            expiresIn: new Date(decoded.exp * 1000).toISOString(),
           },
           1,
           "Token is valid"
         )
       );
     } catch (error) {
-      return res.status(401).json(response(null, 0, "Invalid token"));
+      return res.status(200).json(response({ isValid: false }, 0, "Invalid token"));
     }
   },
 
@@ -372,7 +374,7 @@ const userController = {
       const { user_id, current_password, new_password } = req.body;
 
       if (!user_id || !current_password || !new_password) {
-        return res.status(400).json(response(null, 0, "All fields are required"));
+        return res.status(200).json(response(null, 0, "All fields are required"));
       }
 
       const user = await User.findOne({
@@ -382,12 +384,12 @@ const userController = {
       });
 
       if (!user) {
-        return res.status(404).json(response(null, 0, "User not found or account is inactive"));
+        return res.status(200).json(response(null, 0, "User not found or account is inactive"));
       }
 
       const isPasswordValid = await comparePassword(user.password, current_password);
       if (!isPasswordValid) {
-        return res.status(401).json(response(null, 0, "Current password is incorrect"));
+        return res.status(200).json(response(null, 0, "Current password is incorrect"));
       }
 
       const hashedPassword = await hashPassword(new_password);

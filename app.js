@@ -6,6 +6,7 @@ const socket_io = require("./realtime/socket");
 const connectToDb = require("./database/db");
 const serverMiddleware = require("./server-middleware");
 const routes = require("./routes");
+const { initAWS } = require("./config/aws");
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ const server = http.createServer(app);
 serverMiddleware(app);
 socket_io(server);
 connectToDb();
+initAWS();
 
 // Routes
 app.use("/api", routes);

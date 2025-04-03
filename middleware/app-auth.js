@@ -5,7 +5,7 @@ const { decodeJsonWebToken } = require("../helper/secure");
 const authenticateUser = async (req, res, next) => {
   try {
     // Get token from Authorization header
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = req.headers.authorization;
 
     if (!token) {
       return res.status(401).json(response(null, 0, "No token provided"));
@@ -15,7 +15,7 @@ const authenticateUser = async (req, res, next) => {
     const decoded = decodeJsonWebToken(token);
 
     // Check if token is expired
-    if (decoded.exp * 1000 < Date.now()) {
+    if (decoded.expired) {
       return res.status(401).json(response(null, 0, "Token has expired"));
     }
 

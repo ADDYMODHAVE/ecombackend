@@ -11,11 +11,12 @@ const productSchema = new mongoose.Schema(
       type: [String],
       required: true,
     },
-    category: {
-      type: String,
+    category_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
       required: true,
-      trim: true,
     },
+
     manufacturer: {
       type: String,
       required: true,
@@ -103,4 +104,4 @@ const productSchema = new mongoose.Schema(
 
 const Product = mongoose.model("Product", productSchema);
 
-module.exports = Product; 
+module.exports = Product;

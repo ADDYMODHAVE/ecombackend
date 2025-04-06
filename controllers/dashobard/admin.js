@@ -18,6 +18,7 @@ const adminController = {
       const existingCompany = await Company.findOne({
         email: company_email,
         is_deleted: false,
+        is_active: true,
       });
       if (existingCompany) {
         return res.status(200).json(response(null, 0, "Company email already exists"));

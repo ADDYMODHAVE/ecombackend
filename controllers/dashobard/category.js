@@ -1,6 +1,7 @@
 const Category = require("../../models/category");
 const { response } = require("../../helper/common");
 const { uploadImageToS3 } = require("../../helper/aws");
+const common = require("../../helper/common");
 
 const categoryController = {
   // Add a new category
@@ -18,6 +19,7 @@ const categoryController = {
         name,
         company_id: req.company._id,
         is_deleted: false,
+        is_active: true,
       });
 
       if (existingCategory) {
@@ -41,6 +43,47 @@ const categoryController = {
       });
 
       return res.status(201).json(response(category, 1, "Category added successfully"));
+    } catch (error) {
+      console.error("Error adding category:", error);
+      return res.status(500).json(response(null, 0, error.message));
+    }
+  },
+  EditCategory: async (req, res) => {
+    try {
+      const { name, description, icon, _id } = req.body;
+
+      // Validate required fields
+      if (!name) {
+        return res.status(200).json(response(null, 0, "Category name is required"));
+      }
+
+      // Check if category with same name exists for this company
+      const existingCategory = await Category.findOne({
+        is_active: true,
+        company_id: req.company._id,
+        is_deleted: false,
+        _id: _id,
+      });
+
+      if (!existingCategory) {
+        return res.status(200).json(response(null, 0, "Category with this name not exists"));
+      }
+      let iconUrl;
+      if (new URL(icon)) {
+        iconUrl = icon;
+      } else {
+        // Upload icon to S3
+        iconUrl = await uploadImageToS3(icon, process.env.AWS_S3_BUCKET_NAME, "categories");
+      }
+      existingCategory.name = name;
+      existingCategory.description = description;
+      existingCategory.icon = icon;
+      existingCategory.updatedAt = common.time();
+      const newUpdatedData = await existingCategory.save();
+
+      // Create new category
+
+      return res.status(200).json(response(newUpdatedData, 1, "Category updated successfully"));
     } catch (error) {
       console.error("Error adding category:", error);
       return res.status(500).json(response(null, 0, error.message));
@@ -85,6 +128,7 @@ const categoryController = {
         _id: category_id,
         company_id: req.company._id,
         is_deleted: false,
+        is_active,
       });
 
       if (!category) {
@@ -99,9 +143,10 @@ const categoryController = {
   },
 
   // Deactivate a category
-  deactivateCategory: async (req, res) => {
+  toggleCategory: async (req, res) => {
     try {
       const { category_id } = req.params;
+      const { is_active } = req.body;
 
       const category = await Category.findOne({
         _id: category_id,
@@ -113,10 +158,10 @@ const categoryController = {
         return res.status(200).json(response(null, 0, "Category not found"));
       }
 
-      category.is_active = false;
-      await category.save();
+      category.is_active = is_active;
+      const updatedCategory = await category.save();
 
-      return res.status(200).json(response(category, 1, "Category deactivated successfully"));
+      return res.status(200).json(response(updatedCategory, 1, "Category deactivated successfully"));
     } catch (error) {
       console.error("Error deactivating category:", error);
       return res.status(500).json(response(null, 0, error.message));
@@ -152,21 +197,23 @@ const categoryController = {
   restoreCategory: async (req, res) => {
     try {
       const { category_id } = req.params;
-
+      const { is_deleted } = req.body;
       const category = await Category.findOne({
         _id: category_id,
         company_id: req.company._id,
-        is_deleted: true,
+        is_active: is_deleted,
+        is_deleted: !is_deleted,
       });
 
       if (!category) {
         return res.status(200).json(response(null, 0, "Deleted category not found"));
       }
 
-      category.is_deleted = false;
-      await category.save();
+      category.is_deleted = is_deleted;
+      category.is_active = !is_deleted;
+      const updatedCategory = await category.save();
 
-      return res.status(200).json(response(category, 1, "Category restored successfully"));
+      return res.status(200).json(response(updatedCategory, 1, "Category restored successfully"));
     } catch (error) {
       console.error("Error restoring category:", error);
       return res.status(500).json(response(null, 0, error.message));
@@ -174,4 +221,4 @@ const categoryController = {
   },
 };
 
-module.exports = categoryController; 
+module.exports = categoryController;

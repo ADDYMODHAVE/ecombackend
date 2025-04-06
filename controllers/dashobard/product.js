@@ -1,4 +1,5 @@
 const Product = require("../../models/product");
+const Categories = require("../../models/category");
 const { response } = require("../../helper/common");
 const { uploadMultipleImages } = require("../../helper/aws");
 
@@ -25,6 +26,7 @@ const productController = {
         sideEffects,
         stock,
         storageInstructions,
+        category_id,
       } = req.body;
 
       // Validate required fields
@@ -50,6 +52,7 @@ const productController = {
         sku,
         company_id: req.company._id,
         is_deleted: false,
+        is_active: true,
       });
 
       if (existingProduct) {
@@ -59,10 +62,16 @@ const productController = {
       const uploadedImageUrls = await uploadMultipleImages(images, process.env.AWS_S3_BUCKET_NAME);
 
       // Create new product
+      const findCategory = await Categories.findOne({
+        _id: category_id,
+        is_active: true,
+        is_deleted: false,
+        company_id: req.company._id,
+      });
       const product = await Product.create({
         name,
         description,
-        category,
+        category_id,
         manufacturer,
         sku,
         batchNumber,
@@ -128,6 +137,7 @@ const productController = {
         _id: product_id,
         company_id: req.company._id,
         is_deleted: false,
+        is_active,
       });
 
       if (!product) {
@@ -152,6 +162,7 @@ const productController = {
         _id: product_id,
         company_id: req.company._id,
         is_deleted: false,
+        is_active: true,
       });
 
       if (!product) {
